@@ -29,6 +29,7 @@ from django.conf.urls import url
 from django.http import HttpResponse
 from django.core.wsgi import get_wsgi_application
 from django.conf.urls import url
+from django.core.cache import cache
 from io import BytesIO
 from PIL import Image, ImageDraw
 
@@ -42,17 +43,21 @@ class ImageForm(forms.Form):
         """"生成指定类型的图片并以字节形式(二进制)返回"""
         height = self.cleaned_data['height']
         width = self.cleaned_data['width']
-        image = Image.new('RGB', (width, height))
-        draw = ImageDraw.Draw(image)
-        text = '{} X {}'.format(width, height)
-        textwidth, textheight = draw.textsize(text)
-        if textwidth < width and textheight < height:
-            texttop = (height - textheight) // 2
-            textleft = (width - textwidth) // 2
-            draw.text((textleft, texttop), text, fill=(255, 255, 255))
-        content = BytesIO()
-        image.save(content, image_format)
-        content.seek(0)
+        key = '{}.{}.{}'.format(width, height, image_format)
+        content = cache.get(key)
+        if content is None:
+            image = Image.new('RGB', (width, height))
+            draw = ImageDraw.Draw(image)
+            text = '{} X {}'.format(width, height)
+            textwidth, textheight = draw.textsize(text)
+            if textwidth < width and textheight < height:
+                texttop = (height - textheight) // 2
+                textleft = (width - textwidth) // 2
+                draw.text((textleft, texttop), text, fill=(255, 255, 255))
+            content = BytesIO()
+            image.save(content, image_format)
+            content.seek(0)
+            cache.set(key, content, 60 * 60)
         return content
 
 
