@@ -1,6 +1,7 @@
 # 配置层
 import sys
 import os
+import hashlib
 from django.conf import settings
 
 # 默认为True
@@ -8,6 +9,10 @@ DEBUG = os.environ.get('DEBUG', 'on') == 'on'
 # 随机生成32位密钥
 # SECRET_KEY = os.environ.get('SECRET_KEY', os.urandom(32))
 SECRET_KEY = os.environ.get('SECRET_KEY', 'eh7)!6iyp@#6g!4q@!!ddo6-&5mjs&ul&jvx+tc7z-&#!gcms+')
+
+# 获取当前文件夹路径
+BASE_DIR = os.path.dirname(__file__)
+
 # 设置允许请求的域名
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
 
@@ -21,15 +26,31 @@ settings.configure(
         'django.middleware.csrf.CsrfViewMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
     ),
+    INSTALLED_APPS = (
+        'django.contrib.staticfiles',
+    ),
+    TEMPLATES = (
+        {
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'DIRS': (os.path.join(BASE_DIR, 'templates'),),
+        },
+    ),
+    STATICFILES_DIRS = (
+        os.path.join(BASE_DIR, 'static'),
+    ),
+    STATIC_URL = '/static/',
 )
 
 # 视图层
 from django import forms
 from django.conf.urls import url
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.views.decorators.http import etag
 from django.core.wsgi import get_wsgi_application
 from django.conf.urls import url
 from django.core.cache import cache
+from django.core.urlresolvers import reverse
+from django.shortcuts import render
 from io import BytesIO
 from PIL import Image, ImageDraw
 
@@ -60,21 +81,29 @@ class ImageForm(forms.Form):
             cache.set(key, content, 60 * 60)
         return content
 
+def generate_etag(request, width, height):
+    content = 'Placeholder: {0} x {1}'.format(width, height)
+    return hashlib.sha1(content.encode('utf-8')).hexdigest()
 
+@etag(generate_etag)
 def palceholder(request, width, height):
     """图片占位视图"""
     form = ImageForm({'heigh': height, 'width': width})
     if forms.is_valid():
-        height = forms.cleaned_data['height']
-        width = forms.cleaned_data['width']
-        return HttpResponse('Ok')
+        image = form.generate()
+        # height = forms.cleaned_data['height']
+        # width = forms.cleaned_data['width']
+        return HttpResponse(image, cotent_type='image/png')
     else:
         return HttpResponseBadRequest('Invalid Image Request')
 
 def index(request):
     """主页视图"""
-
-    return HttpResponse('Hello world')
+    example = reverse('placeholder', kwargs={'width': 50, 'height':50})
+    context = {
+        'example': request._absolute_uri(example)
+    }
+    return HttpResponse(request, 'home.html', context)
 
 # url模式
 urlpatterns = (
