@@ -2,6 +2,9 @@
 import sys
 import os
 import hashlib
+from io import BytesIO
+from PIL import Image, ImageDraw
+
 from django.conf import settings
 
 # 默认为True
@@ -15,44 +18,43 @@ BASE_DIR = os.path.dirname(__file__)
 
 # 设置允许请求的域名
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
+ALLOWED_HOSTS.append('127.0.0.1')
 
 settings.configure(
-    DEBUG = DEBUG,
-    SECRET_KEY = SECRET_KEY,
-    ROOT_URLCONF = __name__,
-    ALLOWED_HOSTS = ALLOWED_HOSTS,
+    DEBUG=DEBUG,
+    SECRET_KEY=SECRET_KEY,
+    ALLOWED_HOSTS=ALLOWED_HOSTS,
+    ROOT_URLCONF=__name__,
     MIDDLEWARE_CLASSES=(
         'django.middleware.common.CommonMiddleware',
         'django.middleware.csrf.CsrfViewMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
     ),
-    INSTALLED_APPS = (
+    INSTALLED_APPS=(
         'django.contrib.staticfiles',
     ),
-    TEMPLATES = (
+    TEMPLATES=(
         {
             'BACKEND': 'django.template.backends.django.DjangoTemplates',
-            'DIRS': (os.path.join(BASE_DIR, 'templates'),),
+            'DIRS': (os.path.join(BASE_DIR, 'templates'), ),
         },
     ),
-    STATICFILES_DIRS = (
+    STATICFILES_DIRS=(
         os.path.join(BASE_DIR, 'static'),
     ),
-    STATIC_URL = '/static/',
+    STATIC_URL='/static/',
 )
 
 # 视图层
 from django import forms
 from django.conf.urls import url
-from django.http import HttpResponse, HttpResponseBadRequest
-from django.views.decorators.http import etag
-from django.core.wsgi import get_wsgi_application
-from django.conf.urls import url
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
+from django.core.wsgi import get_wsgi_application
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render
-from io import BytesIO
-from PIL import Image, ImageDraw
+from django.views.decorators.http import etag
+
 
 class ImageForm(forms.Form):
     """用于验证图片的高度和宽度"""
@@ -86,14 +88,12 @@ def generate_etag(request, width, height):
     return hashlib.sha1(content.encode('utf-8')).hexdigest()
 
 @etag(generate_etag)
-def palceholder(request, width, height):
+def placeholder(request, width, height):
     """图片占位视图"""
-    form = ImageForm({'heigh': height, 'width': width})
-    if forms.is_valid():
+    form = ImageForm({'height': height, 'width': width})
+    if form.is_valid():
         image = form.generate()
-        # height = forms.cleaned_data['height']
-        # width = forms.cleaned_data['width']
-        return HttpResponse(image, cotent_type='image/png')
+        return HttpResponse(image, content_type='image/png')
     else:
         return HttpResponseBadRequest('Invalid Image Request')
 
@@ -101,14 +101,14 @@ def index(request):
     """主页视图"""
     example = reverse('placeholder', kwargs={'width': 50, 'height':50})
     context = {
-        'example': request._absolute_uri(example)
+        'example': request.build_absolute_uri(example)
     }
-    return HttpResponse(request, 'home.html', context)
+    return render(request, 'home.html', context)
 
 # url模式
 urlpatterns = (
     url(r'^images/(?P<width>[0-9]+)x(?P<height>[0-9]+)/$', placeholder, name = 'placeholder'),
-    url(r'^$', index),
+    url(r'^$', index, name = 'homepage'),
 )
 
 application = get_wsgi_application()
