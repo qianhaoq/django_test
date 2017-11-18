@@ -4,6 +4,8 @@ from django.conf import settings
 
 SECRET_KEY = os.environ.get('SECRET_KEY', os.urandom(32))
 
+BASE_DIR = os.path.dirname(__file__)
+
 settings.configure(
     DEBUG = True,
     SECRET_KEY = SECRET_KEY,
@@ -21,6 +23,7 @@ settings.configure(
         },
     ),
     STATIC_URL='/static/',
+    SITE_PAGES_DIRECTORY = os.path.join(BASE_DIR, 'pages'),
 )
 
 if __name__ == "__main__":
