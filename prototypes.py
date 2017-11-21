@@ -14,6 +14,7 @@ settings.configure(
     INSTALLED_APPS = (
         'django.contrib.staticfiles',
         'sitebuilder',
+        'compressor',
     ),
     TEMPLATES=(
         {
@@ -24,6 +25,7 @@ settings.configure(
     ),
     STATIC_URL='/static/',
     SITE_PAGES_DIRECTORY = os.path.join(BASE_DIR, 'pages'),
+    STATIC_ROOT=os.path.join(BASE_DIR, '_build', 'static'),
 )
 
 if __name__ == "__main__":
