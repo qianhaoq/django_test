@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import sys
+import mongoengine
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -37,6 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework_mongoengine',
+    'rest_framework',
     'helloworld',
 ]
 
@@ -88,6 +93,19 @@ DATABASES = {
     }
 }
 
+MONGODB_DATABASES = {
+    "default": {
+        "name": "comic",
+        "host": "localhost",
+        "port": 27017,
+        "tz_aware": True,  # if you use timezones in django (USE_TZ = True)
+    }
+}
+db = 'default'
+mongoengine.connect(
+    db=MONGODB_DATABASES[db]['name'],
+    host=MONGODB_DATABASES[db]['host']
+)
 
 
 # Password validation
