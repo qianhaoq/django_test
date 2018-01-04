@@ -21,11 +21,11 @@ from rest_framework import routers
 
 router = routers.DefaultRouter()
 router.register(r'pokemon', views.PokemonViewSet,'pokemon')
+# router.register(r'pokemon', views.PokemonList, 'pokemon')
 
 # urlpatterns = [
-#     # url(r'^admin/', admin.site.urls),
-#     url(r'^api',views.api),
-#     url(r'^$',views.hello),
+    # url(r'^admin/', admin.site.urls),
+    # url(r'^$',views.hello),
 # ]
 
 urlpatterns = [
